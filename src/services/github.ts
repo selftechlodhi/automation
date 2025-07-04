@@ -21,16 +21,27 @@ export class GitHubService {
   /**
    * Verify webhook signature
    */
-  verifyWebhookSignature(payload: string, signature: string): boolean {
-    const expectedSignature = `sha256=${crypto
-      .createHmac('sha256', config.github.webhookSecret)
+  verifyWebhookSignature(payload: Buffer, signature: string): boolean {
+    // Compute the expected signature (hex string)
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.GITHUB_WEBHOOK_SECRET || 'd1169ad263cd1fcbbdf23f47a8089e839b2f7665eecbb2f3993845226655f620')
       .update(payload)
-      .digest('hex')}`;
-    
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+      .digest('hex');
+  
+    // Remove 'sha256=' prefix if present
+    const signatureHex = signature.startsWith('sha256=') ? signature.slice(7) : signature;
+  
+    try {
+      // Compare using timingSafeEqual
+      return crypto.timingSafeEqual(
+        Buffer.from(signatureHex, 'hex'),
+        Buffer.from(expectedSignature, 'hex')
+      );
+    } catch (e) {
+      // If lengths don't match, timingSafeEqual throws
+      console.log('verifyWebhookSignature error:', e);
+      return false;
+    }
   }
 
   /**

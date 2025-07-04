@@ -11,17 +11,35 @@ const commentProcessor = new CommentProcessor();
 
 // Extend Express Request interface to include rawBody
 declare global {
-  namespace Express {
-    interface Request {
-      rawBody?: Buffer;
+    namespace Express {
+      interface Request {
+        rawBody?: Buffer;
+      }
     }
   }
-}
-
-// Middleware
-app.use(bodyParser.json({ verify: (req: any, res, buf) => {
-  req.rawBody = buf;
-}}));
+  
+  // Middleware
+  // For JSON payloads
+  app.use(
+      bodyParser.json({
+        verify: (req, res, buf) => {
+          (req as any).rawBody = buf;
+          console.log('verify (json) called, buf length:', buf.length);
+        }
+      })
+    );
+    
+    // For urlencoded payloads
+    app.use(
+      bodyParser.urlencoded({
+        extended: true,
+        verify: (req, res, buf) => {
+          (req as any).rawBody = buf;
+          console.log('verify (urlencoded) called, buf length:', buf.length);
+        }
+      })
+    );
+  
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -39,9 +57,8 @@ app.post('/webhook', async (req, res) => {
     const event = req.headers['x-github-event'] as string;
     
     console.log(`Received ${event} event`);
-
     // Verify webhook signature
-    if (!signature || !req.rawBody || !githubService.verifyWebhookSignature(req.rawBody.toString(), signature)) {
+    if (!signature || !req.rawBody || !githubService.verifyWebhookSignature(req.rawBody, signature)) {
       console.error('Invalid webhook signature');
       return res.status(401).json({ error: 'Invalid signature' });
     }
