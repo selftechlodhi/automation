@@ -24,7 +24,7 @@ export class GitHubService {
   verifyWebhookSignature(payload: Buffer, signature: string): boolean {
     // Compute the expected signature (hex string)
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.GITHUB_WEBHOOK_SECRET || 'd1169ad263cd1fcbbdf23f47a8089e839b2f7665eecbb2f3993845226655f620')
+      .createHmac('sha256', process.env.GITHUB_WEBHOOK_SECRET || '')
       .update(payload)
       .digest('hex');
   
