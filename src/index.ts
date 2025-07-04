@@ -63,7 +63,7 @@ app.post('/webhook', async (req, res) => {
 
     res.status(200).json({ status: 'ok' });
   } catch (error) {
-    console.error('Webhook error:', error);
+    // console.error('Webhook error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
